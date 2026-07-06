@@ -1,0 +1,7 @@
+import { describe, expect, test } from "vitest";
+function normalizeCameroonPhone(phone = "") { const digits = String(phone).replace(/\D/g, ""); if (digits.startsWith("237") && digits.length === 12) return `+${digits}`; if (digits.length === 9) return `+237${digits}`; return phone; }
+function buildRegisterPayload(form = {}) { return { login: form.username?.trim(), password: form.password, mobileNumber: normalizeCameroonPhone(form.phone), countryShortName: "CM", platformContext: "WYLOV_MARKET", loginMethod: "NATIVE", language: "FRENCH", activationCodeDoesNotNeedToBeSent: true, personalInfo: { firstName: form.firstName?.trim(), lastName: form.lastName?.trim(), email: form.email?.trim().toLowerCase() } }; }
+describe("register payload builder", () => {
+  test("construit le payload attendu par le backend", () => expect(buildRegisterPayload({ username: " YannUlrich ", password: "Password123", phone: "690000000", firstName: " Yann ", lastName: " Metapi ", email: "YANN@EXAMPLE.COM" })).toMatchObject({ login: "YannUlrich", password: "Password123", mobileNumber: "+237690000000", countryShortName: "CM", platformContext: "WYLOV_MARKET", loginMethod: "NATIVE", language: "FRENCH", activationCodeDoesNotNeedToBeSent: true, personalInfo: { firstName: "Yann", lastName: "Metapi", email: "yann@example.com" } }));
+  test("normalise un numéro camerounais déjà préfixé", () => expect(buildRegisterPayload({ username: "user", phone: "+237690000000", email: "user@test.com" }).mobileNumber).toBe("+237690000000"));
+});

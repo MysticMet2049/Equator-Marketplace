@@ -1,0 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500&family=Playfair+Display:wght@400;600&display=swap');
+@import "tailwindcss";
+
+   :root{
+  --color-equator-green: #2d6a4f;
+  --color-equator-green-light: #40916c;
+  --color-equator-green-dark: #1b4332;
+  --color-equator-cream: #f8f5f0;
+  --color-equator-beige: #e9e4dc;
+  --color-equator-text: #1a1a18;
+  --color-equator-muted: #6b6b5e;
+
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-body: "DM Sans", "Helvetica Neue", sans-serif;
+  --font-accent: "Playfair Display", serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-equator-cream);
+  color: var(--color-equator-text);
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4 { font-family: var(--font-display); }
+html { scroll-behavior: smooth; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-equator-cream); }
+::-webkit-scrollbar-thumb { background: var(--color-equator-green); border-radius: 3px; }
+
+.hero-slide { transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out; }
+.hero-slide.active { opacity: 1; transform: scale(1); }
+.hero-slide.inactive { opacity: 0; transform: scale(1.02); }
+
+.product-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.10); }
+.product-card img { transition: transform 0.5s ease; }
+.product-card:hover img { transform: scale(1.05); }
+
+.store-card { transition: transform 0.3s ease; }
+.store-card:hover { transform: scale(1.01); }
+
+.nav-link::after { content: ''; display: block; height: 2px; background: var(--color-equator-green); transform: scaleX(0); transition: transform 0.25s ease; transform-origin: left; }
+.nav-link:hover::after, .nav-link.active::after { transform: scaleX(1); }
+
+.btn-primary { transition: background-color 0.2s, transform 0.1s; }
+.btn-primary:active { transform: scale(0.97); }
+
+.carousel-dot { transition: all 0.3s ease; }
