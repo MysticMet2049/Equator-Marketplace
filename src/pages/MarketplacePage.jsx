@@ -1,8 +1,9 @@
 // Page Marketplace : affiche les produits, filtres et contrôles de navigation.
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FiSearch, FiSliders, FiStar, FiX } from "react-icons/fi";
+import { FiSearch } from "react-icons/fi";
 import ProductCard from "../components/product/ProductCard";
+import ProductFiltersSidebar from "../components/product/filters/ProductFiltersSidebar";
 import Pagination from "../components/common/Pagination";
 import { useApi } from "../context/ApiContext";
 import { useProducts } from "../hooks/useProducts";
@@ -14,34 +15,6 @@ import {
 
 const MARKETPLACE_PAGE_SIZE = 30;
 const FILTER_POOL_SIZE = 1000;
-
-const PRICE_PRESETS = [
-  { label: "Jusqu’à 5 000 FCFA", min: "", max: "5000" },
-  { label: "de 5 000 à 15 000 FCFA", min: "5000", max: "15000" },
-  { label: "de 15 000 à 50 000 FCFA", min: "15000", max: "50000" },
-  { label: "de 50 000 à 100 000 FCFA", min: "50000", max: "100000" },
-  { label: "100 000 FCFA et plus", min: "100000", max: "" },
-];
-
-const RATING_PRESETS = [
-  { label: "4 étoiles et plus", value: 4 },
-  { label: "3 étoiles et plus", value: 3 },
-  { label: "2 étoiles et plus", value: 2 },
-  { label: "1 étoile et plus", value: 1 },
-];
-
-function formatPrice(value) {
-  return `${Number(value || 0).toLocaleString("fr-FR")} FCFA`;
-}
-
-function normalizeNumber(value, fallback = 0) {
-  const numberValue = Number(value);
-  return Number.isFinite(numberValue) ? numberValue : fallback;
-}
-
-function isSamePricePreset(preset, minPrice, maxPrice) {
-  return String(minPrice || "") === String(preset.min || "") && String(maxPrice || "") === String(preset.max || "");
-}
 
 export default function MarketplacePage() {
   // On garde seulement les catégories depuis ApiContext pour l’instant,
@@ -109,11 +82,6 @@ export default function MarketplacePage() {
     return Math.max(1000, Math.ceil(max / 1000) * 1000);
   }, [products]);
 
-  const sliderMinPrice = minPrice.trim() ? normalizeNumber(minPrice, 0) : 0;
-  const sliderMaxPrice = maxPrice.trim() ? normalizeNumber(maxPrice, maxAvailablePrice) : maxAvailablePrice;
-  const safeSliderMinPrice = Math.min(Math.max(sliderMinPrice, 0), maxAvailablePrice);
-  const safeSliderMaxPrice = Math.min(Math.max(sliderMaxPrice, safeSliderMinPrice), maxAvailablePrice);
-
   // Quand la recherche ou un filtre change, on revient à la première page.
   useEffect(() => {
     setPage(0);
@@ -157,42 +125,12 @@ export default function MarketplacePage() {
     setSortBy("default");
   };
 
-  const applyPricePreset = (preset) => {
-    if (isSamePricePreset(preset, minPrice, maxPrice)) {
-      setMinPrice("");
-      setMaxPrice("");
-      return;
-    }
-
-    setMinPrice(preset.min);
-    setMaxPrice(preset.max);
-  };
-
-  const handleMinSliderChange = (event) => {
-    const value = Math.min(Number(event.target.value), safeSliderMaxPrice);
-    setMinPrice(value > 0 ? String(value) : "");
-  };
-
-  const handleMaxSliderChange = (event) => {
-    const value = Math.max(Number(event.target.value), safeSliderMinPrice);
-    setMaxPrice(value < maxAvailablePrice ? String(value) : "");
-  };
-
   const filterButtonStyle = (active) => ({
     background: active ? "var(--color-equator-green)" : "white",
     color: active ? "white" : "var(--color-equator-muted)",
     border: `1px solid ${active ? "var(--color-equator-green)" : "var(--color-equator-beige)"}`,
     fontFamily: "var(--font-body)",
   });
-
-  const checkboxStyle = {
-    accentColor: "var(--color-equator-green)",
-  };
-
-  const sectionTitleStyle = {
-    color: "var(--color-equator-text)",
-    fontFamily: "var(--font-body)",
-  };
 
   return (
     <main data-testid="marketplace-page" className="min-h-screen pt-14" style={{ background: "var(--color-equator-cream)" }}>
@@ -258,153 +196,22 @@ export default function MarketplacePage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 items-start">
-          <aside
-            data-testid="marketplace-side-filters"
-            className="bg-white p-5 lg:sticky lg:top-20"
-            style={{ border: "1px solid var(--color-equator-beige)", boxShadow: "0 10px 24px rgba(24, 38, 30, 0.05)" }}
-          >
-            <div className="flex items-center justify-between gap-3 mb-5">
-              <div className="flex items-center gap-2">
-                <FiSliders size={16} style={{ color: "var(--color-equator-green)" }} />
-                <p className="text-base font-bold" style={sectionTitleStyle}>
-                  Filtres
-                </p>
-              </div>
-
-              {hasClientSideFilters && (
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="flex items-center gap-1 text-[11px] font-semibold"
-                  style={{ color: "var(--color-equator-green)", fontFamily: "var(--font-body)" }}
-                >
-                  <FiX size={12} /> Réinitialiser
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-7">
-              <section>
-                <h2 className="text-base font-bold mb-3" style={sectionTitleStyle}>
-                  Prix
-                </h2>
-
-                <p className="text-sm font-bold mb-3" style={sectionTitleStyle}>
-                  {formatPrice(safeSliderMinPrice)} – {maxPrice.trim() ? formatPrice(safeSliderMaxPrice) : `${formatPrice(maxAvailablePrice)} et plus`}
-                </p>
-
-                <div className="mb-5">
-                  <input
-                    data-testid="marketplace-min-price-slider"
-                    type="range"
-                    min="0"
-                    max={maxAvailablePrice}
-                    step="500"
-                    value={safeSliderMinPrice}
-                    onChange={handleMinSliderChange}
-                    className="w-full"
-                    style={{ accentColor: "var(--color-equator-green)" }}
-                  />
-                  <input
-                    data-testid="marketplace-max-price-slider"
-                    type="range"
-                    min="0"
-                    max={maxAvailablePrice}
-                    step="500"
-                    value={safeSliderMaxPrice}
-                    onChange={handleMaxSliderChange}
-                    className="w-full -mt-2"
-                    style={{ accentColor: "var(--color-equator-green)" }}
-                  />
-                </div>
-
-                <div className="space-y-2.5">
-                  {PRICE_PRESETS.map((preset) => (
-                    <label key={preset.label} className="flex items-center gap-3 text-sm cursor-pointer" style={sectionTitleStyle}>
-                      <input
-                        type="checkbox"
-                        checked={isSamePricePreset(preset, minPrice, maxPrice)}
-                        onChange={() => applyPricePreset(preset)}
-                        className="w-4 h-4"
-                        style={checkboxStyle}
-                      />
-                      <span>{preset.label}</span>
-                    </label>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h2 className="text-base font-bold mb-3" style={sectionTitleStyle}>
-                  Avis clients
-                </h2>
-
-                <div className="space-y-2.5">
-                  {RATING_PRESETS.map((rating) => (
-                    <label key={rating.value} className="flex items-center gap-3 text-sm cursor-pointer" style={sectionTitleStyle}>
-                      <input
-                        data-testid="marketplace-rating-filter"
-                        type="checkbox"
-                        checked={minRating === rating.value}
-                        onChange={() => setMinRating(minRating === rating.value ? 0 : rating.value)}
-                        className="w-4 h-4"
-                        style={checkboxStyle}
-                      />
-                      <span className="flex items-center gap-1">
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <FiStar
-                            key={index}
-                            size={14}
-                            fill={index < rating.value ? "currentColor" : "none"}
-                            style={{ color: "var(--color-equator-green)" }}
-                          />
-                        ))}
-                        <span className="ml-1">{rating.label}</span>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </section>
-
-              <section>
-                <h2 className="text-base font-bold mb-3" style={sectionTitleStyle}>
-                  Promotions et bonnes affaires
-                </h2>
-
-                <label className="flex items-center gap-3 text-sm cursor-pointer" style={sectionTitleStyle}>
-                  <input
-                    data-testid="marketplace-discount-filter"
-                    type="checkbox"
-                    checked={onlyDiscounted}
-                    onChange={(event) => setOnlyDiscounted(event.target.checked)}
-                    className="w-4 h-4"
-                    style={checkboxStyle}
-                  />
-                  <span>Produits en promotion</span>
-                </label>
-              </section>
-
-              <section>
-                <h2 className="text-base font-bold mb-3" style={sectionTitleStyle}>
-                  Trier par
-                </h2>
-
-                <select
-                  data-testid="marketplace-sort"
-                  value={sortBy}
-                  onChange={(event) => setSortBy(event.target.value)}
-                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none bg-white"
-                  style={{ border: "1px solid var(--color-equator-beige)", fontFamily: "var(--font-body)" }}
-                >
-                  <option value="default">Pertinence</option>
-                  <option value="price-asc">Prix croissant</option>
-                  <option value="price-desc">Prix décroissant</option>
-                  <option value="discount">Meilleures réductions</option>
-                  <option value="rating">Mieux notés</option>
-                </select>
-              </section>
-            </div>
-          </aside>
+          <ProductFiltersSidebar
+            testIdPrefix="marketplace"
+            hasActiveFilters={hasClientSideFilters}
+            onResetFilters={resetFilters}
+            minPrice={minPrice}
+            setMinPrice={setMinPrice}
+            maxPrice={maxPrice}
+            setMaxPrice={setMaxPrice}
+            minRating={minRating}
+            setMinRating={setMinRating}
+            onlyDiscounted={onlyDiscounted}
+            setOnlyDiscounted={setOnlyDiscounted}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            maxAvailablePrice={maxAvailablePrice}
+          />
 
           <section className="min-w-0">
             {/* Loading */}

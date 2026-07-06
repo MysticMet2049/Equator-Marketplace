@@ -517,10 +517,66 @@ export async function getAllProducts(params = {}) {
   return searchProducts({ pageSize: 24, ...params });
 }
 
+function buildFullTextBody(query, extraParams = {}) {
+  const body = buildSearchQuery({
+    page: extraParams.page || 0,
+    pageSize: extraParams.pageSize || GLOBAL_POOL_PAGE_SIZE,
+    readAll: extraParams.readAll ?? true,
+    searchString: query,
+    sortBy: extraParams.sortBy,
+    sortDirection: extraParams.sortDirection,
+    fieldFilters: extraParams.fieldFilters,
+  });
+
+  // Certains endpoints Wylov lisent `searchString`, d'autres utilisent un
+  // nom plus générique. On envoie les alias sans casser les DTO tolérants.
+  return {
+    ...body,
+    keyword: query,
+    keywords: query,
+    query,
+    criteria: query,
+  };
+}
+
 export async function fullTextSearchProducts(query, extraParams = {}) {
+  const searchString = String(query || "").trim();
+
+  if (!searchString) {
+    return {
+      items: [],
+      totalItems: 0,
+      totalPages: 0,
+      page: 0,
+    };
+  }
+
+  const body = buildFullTextBody(searchString, extraParams);
+  const fullTextPaths = [
+    "/api/client/catalog/products/full-text-search",
+    "/api/client/catalog/products/projected/full-text-search",
+    "/api/client/catalog/product/full-text-search",
+  ];
+
+  for (const path of fullTextPaths) {
+    const response = await cachedRequest(`POST:${path}`, body, () =>
+      safePost(path, body, path)
+    );
+    const normalized = normalizeResponse(
+      response,
+      extraParams.pageSize || GLOBAL_POOL_PAGE_SIZE
+    );
+
+    if (normalized.items.length > 0) {
+      return normalized;
+    }
+  }
+
+  // Fallback API classique : toujours API, jamais données mockées.
   return searchProducts({
     ...extraParams,
-    searchString: query,
+    searchString,
+    pageSize: extraParams.pageSize || GLOBAL_POOL_PAGE_SIZE,
   });
 }
 

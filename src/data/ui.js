@@ -6,6 +6,7 @@ export const SORT_OPTIONS = [
   { value: "pertinence",  label: "Pertinence" },
   { value: "price-asc",  label: "Prix croissant" },
   { value: "price-desc", label: "Prix décroissant" },
+  { value: "discount",   label: "Meilleures réductions" },
   { value: "rating",     label: "Mieux notés" },
   { value: "recent",     label: "Plus récents" },
 ];
